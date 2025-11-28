@@ -62,13 +62,13 @@
             <section class="input-section">
                 <h2>📊 Input Parameters - Same-Day Sale / Buy Back</h2>
                 <div class="input-grid">
-                    <div class="input-group">
-                        <label for="vs_strikePrice">Strike Price ($)</label>
-                        <input type="number" id="vs_strikePrice" value="0.133" step="0.001" min="0">
-                    </div>
                     <div class="input-group full-width">
-                        <label for="vs_fmvPrices">FMV / Buy Back Prices ($) - Comma Separated</label>
-                        <input type="text" id="vs_fmvPrices" value="5.00, 8.00, 12.00" placeholder="e.g., 5.00, 8.00, 12.00">
+                        <label for="vs_strikePrices">Strike Prices ($) - Comma Separated</label>
+                        <input type="text" id="vs_strikePrices" value="0.133, 0.50, 1.00" placeholder="e.g., 0.133, 0.50, 1.00">
+                    </div>
+                    <div class="input-group">
+                        <label for="vs_buyBackPrice">Buy Back Price ($)</label>
+                        <input type="number" id="vs_buyBackPrice" value="12.00" step="0.01" min="0">
                     </div>
                     <div class="input-group">
                         <label for="vs_dollarRate">Dollar Rate (₹)</label>

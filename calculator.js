@@ -44,14 +44,14 @@ function getExerciseInputs() {
 
 // Get inputs for Vested Options (Same-Day Sale / Buy Back) tab
 function getVestedInputs() {
-    const fmvPricesStr = document.getElementById('vs_fmvPrices').value || '';
-    const fmvPrices = fmvPricesStr.split(',')
+    const strikePricesStr = document.getElementById('vs_strikePrices').value || '';
+    const strikePrices = strikePricesStr.split(',')
         .map(s => parseFloat(s.trim()))
         .filter(n => !isNaN(n) && n >= 0);
 
     return {
-        strikePrice: parseFloat(document.getElementById('vs_strikePrice').value) || 0,
-        fmvPrices: fmvPrices.length > 0 ? fmvPrices : [5.00],
+        strikePrices: strikePrices.length > 0 ? strikePrices : [0.133],
+        buyBackPrice: parseFloat(document.getElementById('vs_buyBackPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('vs_dollarRate').value) || 0,
         shortTermTaxHigh: (parseFloat(document.getElementById('vs_shortTermTaxHigh').value) || 0) / 100,
         shortTermTaxActual: (parseFloat(document.getElementById('vs_shortTermTaxActual').value) || 0) / 100
@@ -427,13 +427,15 @@ function calculateVestedTab() {
     const container = document.getElementById('vestedTablesContainer');
     container.innerHTML = '';
 
-    // Generate a table for each FMV/Buy Back price
-    inputs.fmvPrices.forEach((fmvPrice, index) => {
-        const singleInputs = { ...inputs, fmvPrice, sellPrice: fmvPrice };
+    const buyBackPrice = inputs.buyBackPrice;
+
+    // Generate a table for each strike price
+    inputs.strikePrices.forEach((strikePrice, index) => {
+        const singleInputs = { ...inputs, strikePrice, fmvPrice: buyBackPrice, sellPrice: buyBackPrice };
         const taxEvents = {
-            taxEvent1High: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxHigh,
-            taxEvent1Actual: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxActual,
-            taxEvent2Short: 0 // Same-day sale at FMV means no additional capital gain
+            taxEvent1High: (buyBackPrice - strikePrice) * inputs.shortTermTaxHigh,
+            taxEvent1Actual: (buyBackPrice - strikePrice) * inputs.shortTermTaxActual,
+            taxEvent2Short: 0 // Same-day sale at Buy Back price means no additional capital gain
         };
 
         const vestedData = shareQuantities.map(qty => calculateVestedOptions(qty, singleInputs, taxEvents));
@@ -442,7 +444,7 @@ function calculateVestedTab() {
         const tableWrapper = document.createElement('div');
         tableWrapper.className = 'table-wrapper strike-table';
         tableWrapper.innerHTML = `
-            <h3 class="strike-header">FMV / Buy Back: $${fmvPrice.toFixed(2)} <span class="perquisite-info">(Perquisite/share: $${(fmvPrice - inputs.strikePrice).toFixed(2)})</span></h3>
+            <h3 class="strike-header">Strike Price: $${strikePrice.toFixed(3)} <span class="perquisite-info">(Perquisite/share: $${(buyBackPrice - strikePrice).toFixed(2)})</span></h3>
             <table id="vestedTable_${index}">
                 <thead></thead>
                 <tbody></tbody>
@@ -489,12 +491,13 @@ function renderVestedOptionsTableById(tableId, data, dollarRate) {
 
 function renderVestedComparison(inputs) {
     const container = document.getElementById('vestedTablesContainer');
+    const buyBackPrice = inputs.buyBackPrice;
 
     // Create comparison table
     const compDiv = document.createElement('div');
     compDiv.className = 'table-wrapper comparison-summary';
     compDiv.innerHTML = `
-        <h3 class="comparison-header">📊 Comparison Summary - Final Amount (After Tax Refund)</h3>
+        <h3 class="comparison-header">📊 Comparison Summary - Final Amount @ Buy Back $${buyBackPrice.toFixed(2)}</h3>
         <table id="vestedComparisonTable">
             <thead></thead>
             <tbody></tbody>
@@ -504,10 +507,10 @@ function renderVestedComparison(inputs) {
 
     const table = document.getElementById('vestedComparisonTable');
 
-    // Header row with FMV prices
+    // Header row with strike prices
     let headerRow = '<tr><th>Options</th>';
-    inputs.fmvPrices.forEach(fmv => {
-        headerRow += `<th>@ $${fmv.toFixed(2)}</th>`;
+    inputs.strikePrices.forEach(sp => {
+        headerRow += `<th>@ $${sp.toFixed(3)}</th>`;
     });
     headerRow += '<th>Best Option</th></tr>';
     table.querySelector('thead').innerHTML = headerRow;
@@ -518,21 +521,21 @@ function renderVestedComparison(inputs) {
         let row = `<tr><td>${formatNumber(qty)}</td>`;
         let amounts = [];
 
-        inputs.fmvPrices.forEach(fmvPrice => {
-            const singleInputs = { ...inputs, fmvPrice, sellPrice: fmvPrice };
+        inputs.strikePrices.forEach(strikePrice => {
+            const singleInputs = { ...inputs, strikePrice, fmvPrice: buyBackPrice, sellPrice: buyBackPrice };
             const taxEvents = {
-                taxEvent1High: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxHigh,
-                taxEvent1Actual: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxActual,
+                taxEvent1High: (buyBackPrice - strikePrice) * inputs.shortTermTaxHigh,
+                taxEvent1Actual: (buyBackPrice - strikePrice) * inputs.shortTermTaxActual,
                 taxEvent2Short: 0
             };
             const data = calculateVestedOptions(qty, singleInputs, taxEvents);
-            amounts.push({ fmvPrice, finalAmount: data.finalAmount });
+            amounts.push({ strikePrice, finalAmount: data.finalAmount });
             row += `<td>${formatDual(data.finalAmount, inputs.dollarRate)}</td>`;
         });
 
         // Find best (highest final amount)
         const best = amounts.reduce((max, a) => a.finalAmount > max.finalAmount ? a : max, amounts[0]);
-        row += `<td class="highlight">$${best.fmvPrice.toFixed(2)}</td>`;
+        row += `<td class="highlight">$${best.strikePrice.toFixed(3)}</td>`;
         row += '</tr>';
         bodyRows += row;
     });
