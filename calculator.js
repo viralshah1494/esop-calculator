@@ -60,8 +60,13 @@ function getVestedInputs() {
 
 // Get inputs for Long Term Sale tab
 function getLongTermInputs() {
+    const fmvAtExerciseStr = document.getElementById('lt_fmvAtExercise').value || '';
+    const fmvAtExercisePrices = fmvAtExerciseStr.split(',')
+        .map(s => parseFloat(s.trim()))
+        .filter(n => !isNaN(n) && n >= 0);
+
     return {
-        fmvAtExercise: parseFloat(document.getElementById('lt_fmvAtExercise').value) || 0,
+        fmvAtExercisePrices: fmvAtExercisePrices.length > 0 ? fmvAtExercisePrices : [5.12],
         sellPrice: parseFloat(document.getElementById('lt_sellPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('lt_dollarRate').value) || 0,
         longTermTax: (parseFloat(document.getElementById('lt_longTermTax').value) || 0) / 100
@@ -545,12 +550,111 @@ function renderVestedComparison(inputs) {
 
 function calculateLongTermTab() {
     const inputs = getLongTermInputs();
-    const taxEvents = {
-        taxEvent2Long: (inputs.sellPrice - inputs.fmvAtExercise) * inputs.longTermTax
-    };
+    const container = document.getElementById('longTermTablesContainer');
+    container.innerHTML = '';
 
-    const exercisedData = shareQuantities.map(qty => calculateExercisedShares(qty, inputs, taxEvents));
-    renderExercisedSharesTable(exercisedData, inputs.dollarRate);
+    const sellPrice = inputs.sellPrice;
+
+    // Add comparison summary at the top
+    renderLongTermComparison(inputs);
+
+    // Generate a table for each FMV at Exercise
+    inputs.fmvAtExercisePrices.forEach((fmvAtExercise, index) => {
+        const singleInputs = { ...inputs, fmvAtExercise };
+        const taxEvents = {
+            taxEvent2Long: (sellPrice - fmvAtExercise) * inputs.longTermTax
+        };
+
+        const exercisedData = shareQuantities.map(qty => calculateExercisedShares(qty, singleInputs, taxEvents));
+
+        // Create table wrapper
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'table-wrapper strike-table';
+        tableWrapper.innerHTML = `
+            <h3 class="strike-header">FMV at Exercise: $${fmvAtExercise.toFixed(2)} <span class="perquisite-info">(LTCG/share: $${(sellPrice - fmvAtExercise).toFixed(2)})</span></h3>
+            <table id="longTermTable_${index}">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        `;
+        container.appendChild(tableWrapper);
+
+        // Render table data
+        renderLongTermTableById(`longTermTable_${index}`, exercisedData, inputs.dollarRate);
+    });
+}
+
+function renderLongTermTableById(tableId, data, dollarRate) {
+    const table = document.getElementById(tableId);
+    table.querySelector('thead').innerHTML = `
+        <tr>
+            <th>Shares</th>
+            <th>Sell Proceeds</th>
+            <th>Transfer to A/C</th>
+            <th>LTCG Tax (12.5%)</th>
+            <th>Final Amount</th>
+        </tr>`;
+
+    table.querySelector('tbody').innerHTML = data.map(row => `
+        <tr>
+            <td>${formatNumber(row.numShares)}</td>
+            <td>${formatDual(row.sellProceeds, dollarRate)}</td>
+            <td>${formatDual(row.transferToAccount, dollarRate)}</td>
+            <td class="highlight-warning">${formatDual(row.taxEvent2Long, dollarRate)}</td>
+            <td class="highlight">${formatDual(row.finalRemains, dollarRate)}</td>
+        </tr>`).join('');
+}
+
+function renderLongTermComparison(inputs) {
+    const container = document.getElementById('longTermTablesContainer');
+    const sellPrice = inputs.sellPrice;
+
+    // Create comparison table
+    const compDiv = document.createElement('div');
+    compDiv.className = 'table-wrapper comparison-summary';
+    compDiv.innerHTML = `
+        <h3 class="comparison-header">📊 Comparison Summary - Final Amount @ Sell Price $${sellPrice.toFixed(2)}</h3>
+        <table id="longTermComparisonTable">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    `;
+    container.appendChild(compDiv);
+
+    const table = document.getElementById('longTermComparisonTable');
+
+    // Header row with FMV at Exercise prices
+    let headerRow = '<tr><th>Shares</th>';
+    inputs.fmvAtExercisePrices.forEach(fmv => {
+        headerRow += `<th>FMV @ $${fmv.toFixed(2)}</th>`;
+    });
+    headerRow += '<th>Best Option</th></tr>';
+    table.querySelector('thead').innerHTML = headerRow;
+
+    // Body rows
+    let bodyRows = '';
+    shareQuantities.forEach(qty => {
+        let row = `<tr><td>${formatNumber(qty)}</td>`;
+        let amounts = [];
+
+        inputs.fmvAtExercisePrices.forEach(fmvAtExercise => {
+            const singleInputs = { ...inputs, fmvAtExercise };
+            const taxEvents = {
+                taxEvent2Long: (sellPrice - fmvAtExercise) * inputs.longTermTax
+            };
+            const data = calculateExercisedShares(qty, singleInputs, taxEvents);
+            amounts.push({ fmvAtExercise, finalAmount: data.finalRemains });
+            row += `<td>${formatDual(data.finalRemains, inputs.dollarRate)}</td>`;
+        });
+
+        // Find best (highest final amount = lowest FMV at exercise = less LTCG tax)
+        const best = amounts.reduce((max, a) => a.finalAmount > max.finalAmount ? a : max, amounts[0]);
+        row += `<td class="highlight">$${best.fmvAtExercise.toFixed(2)}</td>`;
+        row += '</tr>';
+        bodyRows += row;
+    });
+
+    table.querySelector('tbody').innerHTML = bodyRows;
 }
 
 function calculateComparisonTab() {
