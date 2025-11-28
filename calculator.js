@@ -316,6 +316,9 @@ function calculateExerciseTab() {
     const container = document.getElementById('exerciseTablesContainer');
     container.innerHTML = '';
 
+    // Add comparison summary at the top
+    renderExerciseComparison(inputs);
+
     // Generate a table for each strike price
     inputs.strikePrices.forEach((strikePrice, index) => {
         const singleInputs = { ...inputs, strikePrice };
@@ -341,9 +344,6 @@ function calculateExerciseTab() {
         // Render table data
         renderExerciseOnlyTableById(`exerciseTable_${index}`, exerciseData, inputs.dollarRate);
     });
-
-    // Add comparison summary
-    renderExerciseComparison(inputs);
 }
 
 function renderExerciseOnlyTableById(tableId, data, dollarRate) {
@@ -429,6 +429,9 @@ function calculateVestedTab() {
 
     const buyBackPrice = inputs.buyBackPrice;
 
+    // Add comparison summary at the top
+    renderVestedComparison(inputs);
+
     // Generate a table for each strike price
     inputs.strikePrices.forEach((strikePrice, index) => {
         const singleInputs = { ...inputs, strikePrice, fmvPrice: buyBackPrice, sellPrice: buyBackPrice };
@@ -455,9 +458,6 @@ function calculateVestedTab() {
         // Render table data
         renderVestedOptionsTableById(`vestedTable_${index}`, vestedData, inputs.dollarRate);
     });
-
-    // Add comparison summary
-    renderVestedComparison(inputs);
 }
 
 function renderVestedOptionsTableById(tableId, data, dollarRate) {
