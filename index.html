@@ -16,7 +16,7 @@
         <!-- Tab Navigation -->
         <div class="tab-navigation">
             <button class="tab-btn active" data-tab="exercise">💵 Exercise Only</button>
-            <button class="tab-btn" data-tab="vested">💰 Same-Day Sale</button>
+            <button class="tab-btn" data-tab="vested">💰 Same-Day Sale / Buy Back</button>
             <button class="tab-btn" data-tab="longterm">📈 Long Term Sale</button>
             <button class="tab-btn" data-tab="comparison">⚖️ Comparison</button>
         </div>
@@ -57,22 +57,18 @@
             </section>
         </div>
 
-        <!-- Tab 2: Same-Day Sale (Vested Options) -->
+        <!-- Tab 2: Same-Day Sale / Buy Back -->
         <div class="tab-content" id="tab-vested">
             <section class="input-section">
-                <h2>📊 Input Parameters - Same-Day Sale</h2>
+                <h2>📊 Input Parameters - Same-Day Sale / Buy Back</h2>
                 <div class="input-grid">
                     <div class="input-group">
                         <label for="vs_strikePrice">Strike Price ($)</label>
                         <input type="number" id="vs_strikePrice" value="0.133" step="0.001" min="0">
                     </div>
-                    <div class="input-group">
-                        <label for="vs_fmvPrice">FMV Price ($)</label>
-                        <input type="number" id="vs_fmvPrice" value="5.00" step="0.01" min="0">
-                    </div>
-                    <div class="input-group">
-                        <label for="vs_sellPrice">Sell Price ($)</label>
-                        <input type="number" id="vs_sellPrice" value="12.00" step="0.01" min="0">
+                    <div class="input-group full-width">
+                        <label for="vs_fmvPrices">FMV / Buy Back Prices ($) - Comma Separated</label>
+                        <input type="text" id="vs_fmvPrices" value="5.00, 8.00, 12.00" placeholder="e.g., 5.00, 8.00, 12.00">
                     </div>
                     <div class="input-group">
                         <label for="vs_dollarRate">Dollar Rate (₹)</label>
@@ -91,13 +87,9 @@
             </section>
 
             <section class="results-section">
-                <h2>💰 Selling Vested Options (Same-Day Sale)</h2>
+                <h2>💰 Same-Day Sale / Buy Back</h2>
                 <p class="scenario-desc">Exercise options and sell immediately - Short Term Capital Gains apply</p>
-                <div class="table-wrapper">
-                    <table id="vestedOptionsTable">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
+                <div id="vestedTablesContainer"></div>
                 </div>
             </section>
         </div>

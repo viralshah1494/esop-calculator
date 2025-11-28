@@ -42,12 +42,16 @@ function getExerciseInputs() {
     };
 }
 
-// Get inputs for Vested Options (Same-Day Sale) tab
+// Get inputs for Vested Options (Same-Day Sale / Buy Back) tab
 function getVestedInputs() {
+    const fmvPricesStr = document.getElementById('vs_fmvPrices').value || '';
+    const fmvPrices = fmvPricesStr.split(',')
+        .map(s => parseFloat(s.trim()))
+        .filter(n => !isNaN(n) && n >= 0);
+
     return {
         strikePrice: parseFloat(document.getElementById('vs_strikePrice').value) || 0,
-        fmvPrice: parseFloat(document.getElementById('vs_fmvPrice').value) || 0,
-        sellPrice: parseFloat(document.getElementById('vs_sellPrice').value) || 0,
+        fmvPrices: fmvPrices.length > 0 ? fmvPrices : [5.00],
         dollarRate: parseFloat(document.getElementById('vs_dollarRate').value) || 0,
         shortTermTaxHigh: (parseFloat(document.getElementById('vs_shortTermTaxHigh').value) || 0) / 100,
         shortTermTaxActual: (parseFloat(document.getElementById('vs_shortTermTaxActual').value) || 0) / 100
@@ -109,24 +113,28 @@ function calculateTaxEvents(inputs) {
 
 function calculateVestedOptions(numOptions, inputs, taxEvents) {
     const { strikePrice, sellPrice, dollarRate } = inputs;
-    
-    const exerciseAmount = numOptions * strikePrice;
+
+    const exerciseCost = numOptions * strikePrice;
+    const exerciseAmount = exerciseCost; // alias for backward compatibility
     const sellProceeds = numOptions * sellPrice;
     const taxEvent1 = numOptions * taxEvents.taxEvent1High;
-    const companyDeducts = exerciseAmount + taxEvent1;
+    const taxAtActualRate = numOptions * taxEvents.taxEvent1Actual;
+    const companyDeducts = exerciseCost + taxEvent1;
     const transferToAccount = sellProceeds - companyDeducts;
     const transferInRs = transferToAccount * dollarRate;
-    const taxEvent2Short = numOptions * taxEvents.taxEvent2Short;
-    const overallDirectTax = numOptions * taxEvents.overallTax;
+    const taxEvent2Short = numOptions * (taxEvents.taxEvent2Short || 0);
+    const overallDirectTax = numOptions * (taxEvents.overallTax || 0);
     const finalRemains = transferToAccount - taxEvent2Short;
-    const taxRefund = numOptions * (taxEvents.taxEvent1High - taxEvents.taxEvent1Actual);
+    const taxRefund = taxEvent1 - taxAtActualRate;
     const finalWithRefund = finalRemains + taxRefund;
+    const finalAmount = finalWithRefund;
     const finalInRs = finalWithRefund * dollarRate;
-    
+
     return {
-        numOptions, exerciseAmount, sellProceeds, taxEvent1, companyDeducts,
-        transferToAccount, transferInRs, taxEvent2Short, overallDirectTax,
-        finalRemains, taxRefund, finalWithRefund, finalInRs
+        numOptions, exerciseCost, exerciseAmount, sellProceeds, taxEvent1,
+        taxAtActualRate, companyDeducts, transferToAccount, transferInRs,
+        taxEvent2Short, overallDirectTax, finalRemains, taxRefund,
+        finalWithRefund, finalAmount, finalInRs
     };
 }
 
@@ -416,14 +424,120 @@ function renderExerciseComparison(inputs) {
 
 function calculateVestedTab() {
     const inputs = getVestedInputs();
-    const taxEvents = {
-        taxEvent1High: (inputs.fmvPrice - inputs.strikePrice) * inputs.shortTermTaxHigh,
-        taxEvent1Actual: (inputs.fmvPrice - inputs.strikePrice) * inputs.shortTermTaxActual,
-        taxEvent2Short: (inputs.sellPrice - inputs.fmvPrice) * inputs.shortTermTaxHigh
-    };
+    const container = document.getElementById('vestedTablesContainer');
+    container.innerHTML = '';
 
-    const vestedData = shareQuantities.map(qty => calculateVestedOptions(qty, inputs, taxEvents));
-    renderVestedOptionsTable(vestedData, inputs.dollarRate);
+    // Generate a table for each FMV/Buy Back price
+    inputs.fmvPrices.forEach((fmvPrice, index) => {
+        const singleInputs = { ...inputs, fmvPrice, sellPrice: fmvPrice };
+        const taxEvents = {
+            taxEvent1High: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxHigh,
+            taxEvent1Actual: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxActual,
+            taxEvent2Short: 0 // Same-day sale at FMV means no additional capital gain
+        };
+
+        const vestedData = shareQuantities.map(qty => calculateVestedOptions(qty, singleInputs, taxEvents));
+
+        // Create table wrapper
+        const tableWrapper = document.createElement('div');
+        tableWrapper.className = 'table-wrapper strike-table';
+        tableWrapper.innerHTML = `
+            <h3 class="strike-header">FMV / Buy Back: $${fmvPrice.toFixed(2)} <span class="perquisite-info">(Perquisite/share: $${(fmvPrice - inputs.strikePrice).toFixed(2)})</span></h3>
+            <table id="vestedTable_${index}">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        `;
+        container.appendChild(tableWrapper);
+
+        // Render table data
+        renderVestedOptionsTableById(`vestedTable_${index}`, vestedData, inputs.dollarRate);
+    });
+
+    // Add comparison summary
+    renderVestedComparison(inputs);
+}
+
+function renderVestedOptionsTableById(tableId, data, dollarRate) {
+    const table = document.getElementById(tableId);
+    table.querySelector('thead').innerHTML = `
+        <tr>
+            <th>Options</th>
+            <th>Exercise Amount</th>
+            <th>Sell Proceeds</th>
+            <th>Tax @ High Rate<br><small>(Company Deducts)</small></th>
+            <th>Total Deducted</th>
+            <th>Transfer to A/C</th>
+            <th>Tax @ Actual Rate</th>
+            <th>Tax Refund<br><small>(ITR Claim)</small></th>
+            <th>Final Amount</th>
+        </tr>`;
+
+    table.querySelector('tbody').innerHTML = data.map(row => `
+        <tr>
+            <td>${formatNumber(row.numOptions)}</td>
+            <td>${formatDual(row.exerciseCost, dollarRate)}</td>
+            <td>${formatDual(row.sellProceeds, dollarRate)}</td>
+            <td>${formatDual(row.taxEvent1, dollarRate)}</td>
+            <td class="highlight-warning">${formatDual(row.companyDeducts, dollarRate)}</td>
+            <td>${formatDual(row.transferToAccount, dollarRate)}</td>
+            <td>${formatDual(row.taxAtActualRate, dollarRate)}</td>
+            <td class="highlight-positive">${formatDual(row.taxRefund, dollarRate)}</td>
+            <td class="highlight">${formatDual(row.finalAmount, dollarRate)}</td>
+        </tr>`).join('');
+}
+
+function renderVestedComparison(inputs) {
+    const container = document.getElementById('vestedTablesContainer');
+
+    // Create comparison table
+    const compDiv = document.createElement('div');
+    compDiv.className = 'table-wrapper comparison-summary';
+    compDiv.innerHTML = `
+        <h3 class="comparison-header">📊 Comparison Summary - Final Amount (After Tax Refund)</h3>
+        <table id="vestedComparisonTable">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    `;
+    container.appendChild(compDiv);
+
+    const table = document.getElementById('vestedComparisonTable');
+
+    // Header row with FMV prices
+    let headerRow = '<tr><th>Options</th>';
+    inputs.fmvPrices.forEach(fmv => {
+        headerRow += `<th>@ $${fmv.toFixed(2)}</th>`;
+    });
+    headerRow += '<th>Best Option</th></tr>';
+    table.querySelector('thead').innerHTML = headerRow;
+
+    // Body rows
+    let bodyRows = '';
+    shareQuantities.forEach(qty => {
+        let row = `<tr><td>${formatNumber(qty)}</td>`;
+        let amounts = [];
+
+        inputs.fmvPrices.forEach(fmvPrice => {
+            const singleInputs = { ...inputs, fmvPrice, sellPrice: fmvPrice };
+            const taxEvents = {
+                taxEvent1High: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxHigh,
+                taxEvent1Actual: (fmvPrice - inputs.strikePrice) * inputs.shortTermTaxActual,
+                taxEvent2Short: 0
+            };
+            const data = calculateVestedOptions(qty, singleInputs, taxEvents);
+            amounts.push({ fmvPrice, finalAmount: data.finalAmount });
+            row += `<td>${formatDual(data.finalAmount, inputs.dollarRate)}</td>`;
+        });
+
+        // Find best (highest final amount)
+        const best = amounts.reduce((max, a) => a.finalAmount > max.finalAmount ? a : max, amounts[0]);
+        row += `<td class="highlight">$${best.fmvPrice.toFixed(2)}</td>`;
+        row += '</tr>';
+        bodyRows += row;
+    });
+
+    table.querySelector('tbody').innerHTML = bodyRows;
 }
 
 function calculateLongTermTab() {
