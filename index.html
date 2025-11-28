@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESOP Calculator - India</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🇮🇳 ESOP Calculator</h1>
+            <p class="subtitle">Calculate your Employee Stock Options with Indian Tax Rules</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="exercise">💵 Exercise Only</button>
+            <button class="tab-btn" data-tab="vested">💰 Same-Day Sale</button>
+            <button class="tab-btn" data-tab="longterm">📈 Long Term Sale</button>
+            <button class="tab-btn" data-tab="comparison">⚖️ Comparison</button>
+        </div>
+
+        <!-- Tab 1: Exercise Only -->
+        <div class="tab-content active" id="tab-exercise">
+            <section class="input-section">
+                <h2>📊 Input Parameters - Exercise Only (Multiple Strike Prices)</h2>
+                <div class="input-grid">
+                    <div class="input-group full-width">
+                        <label for="ex_strikePrices">Strike Prices ($) - Comma Separated</label>
+                        <input type="text" id="ex_strikePrices" value="0.133, 0.50, 1.00" placeholder="e.g., 0.133, 0.50, 1.00">
+                    </div>
+                    <div class="input-group">
+                        <label for="ex_fmvPrice">FMV Price ($)</label>
+                        <input type="number" id="ex_fmvPrice" value="5.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="ex_dollarRate">Dollar Rate (₹)</label>
+                        <input type="number" id="ex_dollarRate" value="85.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="ex_shortTermTaxHigh">Tax Rate - High (%)</label>
+                        <input type="number" id="ex_shortTermTaxHigh" value="42.74" step="0.01" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="ex_shortTermTaxActual">Tax Rate - Actual (%)</label>
+                        <input type="number" id="ex_shortTermTaxActual" value="34.20" step="0.01" min="0" max="100">
+                    </div>
+                </div>
+                <button class="calculate-btn" onclick="calculateExerciseTab()">Calculate</button>
+            </section>
+
+            <section class="results-section">
+                <h2>💵 Exercise Only - Compare Strike Prices</h2>
+                <p class="scenario-desc">Compare upfront costs across different strike prices to find the best option</p>
+                <div id="exerciseTablesContainer"></div>
+            </section>
+        </div>
+
+        <!-- Tab 2: Same-Day Sale (Vested Options) -->
+        <div class="tab-content" id="tab-vested">
+            <section class="input-section">
+                <h2>📊 Input Parameters - Same-Day Sale</h2>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="vs_strikePrice">Strike Price ($)</label>
+                        <input type="number" id="vs_strikePrice" value="0.133" step="0.001" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="vs_fmvPrice">FMV Price ($)</label>
+                        <input type="number" id="vs_fmvPrice" value="5.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="vs_sellPrice">Sell Price ($)</label>
+                        <input type="number" id="vs_sellPrice" value="12.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="vs_dollarRate">Dollar Rate (₹)</label>
+                        <input type="number" id="vs_dollarRate" value="85.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="vs_shortTermTaxHigh">Tax Rate - High (%)</label>
+                        <input type="number" id="vs_shortTermTaxHigh" value="42.74" step="0.01" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="vs_shortTermTaxActual">Tax Rate - Actual (%)</label>
+                        <input type="number" id="vs_shortTermTaxActual" value="34.20" step="0.01" min="0" max="100">
+                    </div>
+                </div>
+                <button class="calculate-btn" onclick="calculateVestedTab()">Calculate</button>
+            </section>
+
+            <section class="results-section">
+                <h2>💰 Selling Vested Options (Same-Day Sale)</h2>
+                <p class="scenario-desc">Exercise options and sell immediately - Short Term Capital Gains apply</p>
+                <div class="table-wrapper">
+                    <table id="vestedOptionsTable">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 3: Long Term Sale -->
+        <div class="tab-content" id="tab-longterm">
+            <section class="input-section">
+                <h2>📊 Input Parameters - Long Term Sale</h2>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="lt_fmvAtExercise">FMV at Exercise ($)</label>
+                        <input type="number" id="lt_fmvAtExercise" value="5.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="lt_sellPrice">Sell Price ($)</label>
+                        <input type="number" id="lt_sellPrice" value="12.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="lt_dollarRate">Dollar Rate (₹)</label>
+                        <input type="number" id="lt_dollarRate" value="85.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="lt_longTermTax">Long Term Tax (%)</label>
+                        <input type="number" id="lt_longTermTax" value="12.50" step="0.01" min="0" max="100">
+                    </div>
+                </div>
+                <button class="calculate-btn" onclick="calculateLongTermTab()">Calculate</button>
+            </section>
+
+            <section class="results-section">
+                <h2>📈 Selling Exercised Shares (Long Term)</h2>
+                <p class="scenario-desc">Sell shares held for more than 24 months - Long Term Capital Gains apply</p>
+                <div class="table-wrapper">
+                    <table id="exercisedSharesTable">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab 4: Comparison -->
+        <div class="tab-content" id="tab-comparison">
+            <section class="input-section">
+                <h2>📊 Input Parameters - Full Comparison</h2>
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label for="cp_strikePrice">Strike Price ($)</label>
+                        <input type="number" id="cp_strikePrice" value="0.133" step="0.001" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_fmvPrice">FMV Price ($)</label>
+                        <input type="number" id="cp_fmvPrice" value="5.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_fmvAtExercise">FMV at Exercise ($)</label>
+                        <input type="number" id="cp_fmvAtExercise" value="5.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_sellPrice">Sell Price ($)</label>
+                        <input type="number" id="cp_sellPrice" value="12.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_dollarRate">Dollar Rate (₹)</label>
+                        <input type="number" id="cp_dollarRate" value="85.00" step="0.01" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_shortTermTaxHigh">Tax Rate - High (%)</label>
+                        <input type="number" id="cp_shortTermTaxHigh" value="42.74" step="0.01" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_shortTermTaxActual">Tax Rate - Actual (%)</label>
+                        <input type="number" id="cp_shortTermTaxActual" value="34.20" step="0.01" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label for="cp_longTermTax">Long Term Tax (%)</label>
+                        <input type="number" id="cp_longTermTax" value="12.50" step="0.01" min="0" max="100">
+                    </div>
+                </div>
+                <button class="calculate-btn" onclick="calculateComparisonTab()">Calculate</button>
+            </section>
+
+            <section class="results-section comparison-section">
+                <h2>⚖️ Comparison: Options vs Shares</h2>
+                <p class="scenario-desc">Compare net gains from different strategies</p>
+                <div class="table-wrapper">
+                    <table id="comparisonTable">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p>⚠️ Disclaimer: This calculator is for informational purposes only. Please consult a tax professional for accurate tax advice.</p>
+        </footer>
+    </div>
+
+    <script src="calculator.js"></script>
+</body>
+</html>
+
