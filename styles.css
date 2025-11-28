@@ -6,9 +6,9 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
     min-height: 100vh;
-    color: #e0e0e0;
+    color: #333;
     line-height: 1.6;
 }
 
@@ -28,10 +28,11 @@ header {
     display: flex;
     gap: 5px;
     margin-bottom: 20px;
-    background: rgba(255, 255, 255, 0.05);
+    background: #fff;
     padding: 10px;
     border-radius: 12px;
     flex-wrap: wrap;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 .tab-btn {
@@ -39,8 +40,8 @@ header {
     min-width: 150px;
     padding: 15px 20px;
     background: transparent;
-    border: 2px solid rgba(0, 212, 255, 0.3);
-    color: #888;
+    border: 2px solid #ddd;
+    color: #666;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -49,15 +50,15 @@ header {
 }
 
 .tab-btn:hover {
-    background: rgba(0, 212, 255, 0.1);
-    color: #00d4ff;
-    border-color: rgba(0, 212, 255, 0.5);
+    background: #f0f7ff;
+    color: #0066cc;
+    border-color: #0066cc;
 }
 
 .tab-btn.active {
-    background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 255, 136, 0.1));
-    color: #00d4ff;
-    border-color: #00d4ff;
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+    color: #fff;
+    border-color: #0066cc;
 }
 
 /* Tab Content */
@@ -77,26 +78,26 @@ header {
 
 header h1 {
     font-size: 2.5rem;
-    color: #00d4ff;
+    color: #0066cc;
     margin-bottom: 10px;
-    text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
 }
 
 .subtitle {
-    color: #888;
+    color: #666;
     font-size: 1.1rem;
 }
 
 .input-section {
-    background: rgba(255, 255, 255, 0.05);
+    background: #fff;
     border-radius: 15px;
     padding: 30px;
     margin-bottom: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .input-section h2 {
-    color: #00d4ff;
+    color: #0066cc;
     margin-bottom: 20px;
 }
 
@@ -123,30 +124,32 @@ header h1 {
 
 .input-group label {
     margin-bottom: 8px;
-    color: #aaa;
+    color: #555;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .input-group input {
     padding: 12px 15px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #ddd;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: #fafafa;
+    color: #333;
     font-size: 1rem;
     transition: all 0.3s ease;
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: #00d4ff;
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    border-color: #0066cc;
+    box-shadow: 0 0 8px rgba(0, 102, 204, 0.2);
+    background: #fff;
 }
 
 .calculate-btn {
     width: 100%;
     padding: 15px 30px;
-    background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     border: none;
     border-radius: 8px;
     color: #fff;
@@ -158,19 +161,19 @@ header h1 {
 
 .calculate-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+    box-shadow: 0 5px 20px rgba(0, 102, 204, 0.3);
 }
 
 .summary-section {
-    background: rgba(0, 212, 255, 0.1);
+    background: #e8f4fc;
     border-radius: 15px;
     padding: 30px;
     margin-bottom: 30px;
-    border: 1px solid rgba(0, 212, 255, 0.3);
+    border: 1px solid #b8d4e8;
 }
 
 .summary-section h2 {
-    color: #00d4ff;
+    color: #0066cc;
     margin-bottom: 20px;
 }
 
@@ -181,79 +184,83 @@ header h1 {
 }
 
 .summary-item {
-    background: rgba(255, 255, 255, 0.05);
+    background: #fff;
     padding: 15px;
     border-radius: 8px;
     text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .summary-item .label {
-    color: #888;
+    color: #666;
     font-size: 0.85rem;
     margin-bottom: 5px;
 }
 
 .summary-item .value {
-    color: #00d4ff;
+    color: #0066cc;
     font-size: 1.2rem;
     font-weight: bold;
 }
 
 .results-section {
-    background: rgba(255, 255, 255, 0.05);
+    background: #fff;
     border-radius: 15px;
     padding: 30px;
     margin-bottom: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .results-section h2 {
-    color: #00d4ff;
+    color: #0066cc;
+    margin-bottom: 10px;
+}
 
 .positive {
-    color: #00ff88 !important;
+    color: #28a745 !important;
 }
 
 .negative {
-    color: #ff6b6b !important;
+    color: #dc3545 !important;
 }
 
 .comparison-section {
-    border: 1px solid rgba(0, 255, 136, 0.3);
-    background: rgba(0, 255, 136, 0.05);
+    border: 1px solid #28a745;
+    background: #f0fff4;
 }
 
 /* Strike Price Tables */
 .strike-table {
     margin-bottom: 30px;
-    border: 1px solid rgba(0, 212, 255, 0.2);
+    border: 1px solid #d0e0f0;
     border-radius: 10px;
     padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
+    background: #f8fbff;
 }
 
 .strike-header {
-    color: #00d4ff;
+    color: #0066cc;
     font-size: 1.2rem;
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+    border-bottom: 1px solid #d0e0f0;
 }
 
 .strike-header .perquisite-info {
-    color: #ffc107;
+    color: #e67e00;
     font-size: 0.9rem;
     font-weight: normal;
 }
 
 .comparison-summary {
     margin-top: 40px;
-    border: 2px solid rgba(0, 255, 136, 0.4);
-    background: rgba(0, 255, 136, 0.05);
+    border: 2px solid #28a745;
+    background: #f0fff4;
 }
 
 .comparison-header {
-    color: #00ff88;
+    color: #28a745;
     font-size: 1.3rem;
     margin-bottom: 15px;
 }
@@ -266,37 +273,15 @@ footer {
 }
 
 footer p {
-    background: rgba(255, 193, 7, 0.1);
+    background: #fff8e6;
     padding: 15px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    color: #ffc107;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    header h1 {
-        font-size: 1.8rem;
-    }
-
-    .input-grid {
-        grid-template-columns: 1fr;
-    }
-
-    table {
-        font-size: 0.75rem;
-    }
-
-    thead th, tbody td {
-        padding: 8px 5px;
-    }
-}
-
-    margin-bottom: 10px;
+    border: 1px solid #ffe0a0;
+    color: #996600;
 }
 
 .scenario-desc {
-    color: #888;
+    color: #666;
     font-size: 0.9rem;
     margin-bottom: 20px;
 }
@@ -312,13 +297,13 @@ table {
 }
 
 thead th {
-    background: rgba(0, 212, 255, 0.2);
+    background: #e8f4fc;
     padding: 12px 10px;
     text-align: right;
-    color: #00d4ff;
+    color: #0066cc;
     font-weight: 600;
     white-space: nowrap;
-    border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+    border-bottom: 2px solid #b8d4e8;
 }
 
 thead th:first-child {
@@ -330,19 +315,19 @@ tbody tr {
 }
 
 tbody tr:hover {
-    background: rgba(0, 212, 255, 0.1);
+    background: #f0f7ff;
 }
 
 tbody td {
     padding: 12px 10px;
     text-align: right;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid #eee;
 }
 
 tbody td:first-child {
     text-align: left;
     font-weight: 600;
-    color: #00d4ff;
+    color: #0066cc;
 }
 
 /* Dual value display (USD + INR) */
@@ -353,7 +338,7 @@ td .inr-value {
 }
 
 .usd-value {
-    color: #fff;
+    color: #333;
     font-weight: 600;
 }
 
@@ -364,60 +349,63 @@ td .inr-value {
 }
 
 .summary-item .dual-value .usd-value {
-    color: #00d4ff;
+    color: #0066cc;
     font-size: 1.2rem;
 }
 
 .summary-item .dual-value .inr-value {
-    color: #888;
+    color: #666;
     font-size: 0.9rem;
 }
 
+td.highlight {
+    background: #e8fff0;
+}
+
 td.highlight .usd-value {
-    color: #00ff88;
+    color: #28a745;
 }
 
 td.highlight .inr-value {
-    color: #00cc6a;
+    color: #1e7e34;
+}
+
+td.highlight-warning {
+    background: #fff8e6;
 }
 
 td.highlight-warning .usd-value {
-    color: #ffcc00;
+    color: #e67e00;
 }
 
 td.highlight-warning .inr-value {
-    color: #cc9900;
+    color: #cc6600;
+}
+
+td.highlight-positive {
+    background: #e8f4fc;
 }
 
 td.highlight-positive .usd-value {
-    color: #00d4ff;
+    color: #0066cc;
 }
 
 td.highlight-positive .inr-value {
-    color: #0099cc;
+    color: #0052a3;
 }
 
 .positive {
-    color: #00ff88 !important;
+    color: #28a745 !important;
     font-weight: bold;
 }
 
 .negative {
-    color: #ff6b6b !important;
+    color: #dc3545 !important;
     font-weight: bold;
 }
 
 .comparison-section tbody td:last-child {
     font-weight: bold;
-}
-
-footer {
-    text-align: center;
-    padding: 30px;
-    color: #666;
-    font-size: 0.85rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin-top: 20px;
 }
 
 /* Responsive adjustments */
@@ -428,6 +416,10 @@ footer {
 
     header h1 {
         font-size: 1.8rem;
+    }
+
+    .input-grid {
+        grid-template-columns: 1fr;
     }
 
     .input-section, .results-section {
