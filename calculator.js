@@ -34,10 +34,13 @@ function parseCommaSeparated(str, defaultValue) {
     return values.length > 0 ? values : defaultValue;
 }
 
+// Default share quantities for all tabs
+const DEFAULT_SHARE_QUANTITIES = [1000, 2000, 3000, 4000, 5000];
+
 // Get inputs for Exercise Only tab (multiple strike prices)
 function getExerciseInputs() {
     return {
-        shareQuantities: parseCommaSeparated(document.getElementById('ex_shareQuantities').value, [1000, 2000, 3000]),
+        shareQuantities: DEFAULT_SHARE_QUANTITIES,
         strikePrices: parseCommaSeparated(document.getElementById('ex_strikePrices').value, [1]),
         fmvPrice: parseFloat(document.getElementById('ex_fmvPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('ex_dollarRate').value) || 0,
@@ -49,7 +52,7 @@ function getExerciseInputs() {
 // Get inputs for Vested Options (Same-Day Sale / Buy Back) tab
 function getVestedInputs() {
     return {
-        shareQuantities: parseCommaSeparated(document.getElementById('vs_shareQuantities').value, [1000, 2000, 3000]),
+        shareQuantities: DEFAULT_SHARE_QUANTITIES,
         strikePrices: parseCommaSeparated(document.getElementById('vs_strikePrices').value, [1]),
         buyBackPrice: parseFloat(document.getElementById('vs_buyBackPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('vs_dollarRate').value) || 0,
@@ -61,7 +64,7 @@ function getVestedInputs() {
 // Get inputs for Long Term Sale tab
 function getLongTermInputs() {
     return {
-        shareQuantities: parseCommaSeparated(document.getElementById('lt_shareQuantities').value, [1000, 2000, 3000]),
+        shareQuantities: DEFAULT_SHARE_QUANTITIES,
         strikePrices: parseCommaSeparated(document.getElementById('lt_strikePrices').value, [1]),
         fmvAtExercise: parseFloat(document.getElementById('lt_fmvAtExercise').value) || 0,
         sellPrice: parseFloat(document.getElementById('lt_sellPrice').value) || 0,
@@ -75,7 +78,7 @@ function getLongTermInputs() {
 // Get inputs for Comparison tab
 function getComparisonInputs() {
     return {
-        shareQuantities: parseCommaSeparated(document.getElementById('cp_shareQuantities').value, [1000, 2000, 3000]),
+        shareQuantities: DEFAULT_SHARE_QUANTITIES,
         strikePrice: parseFloat(document.getElementById('cp_strikePrice').value) || 0,
         fmvPrice: parseFloat(document.getElementById('cp_fmvPrice').value) || 0,
         fmvAtExercise: parseFloat(document.getElementById('cp_fmvAtExercise').value) || 0,
@@ -346,12 +349,12 @@ function calculateExerciseTab() {
         `;
         container.appendChild(tableWrapper);
 
-        // Render table data
-        renderExerciseOnlyTableById(`exerciseTable_${index}`, exerciseData, inputs.dollarRate);
+        // Render table data with custom input
+        renderExerciseOnlyTableById(`exerciseTable_${index}`, exerciseData, inputs.dollarRate, singleInputs, taxEvents, index);
     });
 }
 
-function renderExerciseOnlyTableById(tableId, data, dollarRate) {
+function renderExerciseOnlyTableById(tableId, data, dollarRate, inputs, taxEvents, tableIndex) {
     const table = document.getElementById(tableId);
     table.querySelector('thead').innerHTML = `
         <tr>
@@ -364,7 +367,19 @@ function renderExerciseOnlyTableById(tableId, data, dollarRate) {
             <th>Net Cost<br><small>(After Refund)</small></th>
         </tr>`;
 
-    table.querySelector('tbody').innerHTML = data.map(row => `
+    // Custom input row at the top
+    const customInputRow = `
+        <tr class="custom-input-row">
+            <td><input type="number" id="ex_custom_${tableIndex}" placeholder="Enter qty" class="custom-qty-input" onchange="calculateExerciseCustomRow(${tableIndex}, ${inputs.strikePrice}, ${inputs.fmvPrice}, ${inputs.shortTermTaxHigh}, ${inputs.shortTermTaxActual}, ${dollarRate})"></td>
+            <td id="ex_custom_${tableIndex}_exercise">-</td>
+            <td id="ex_custom_${tableIndex}_taxHigh">-</td>
+            <td id="ex_custom_${tableIndex}_upfront">-</td>
+            <td id="ex_custom_${tableIndex}_taxActual">-</td>
+            <td id="ex_custom_${tableIndex}_refund">-</td>
+            <td id="ex_custom_${tableIndex}_net">-</td>
+        </tr>`;
+
+    const dataRows = data.map(row => `
         <tr>
             <td>${formatNumber(row.numOptions)}</td>
             <td>${formatDual(row.exerciseAmount, dollarRate)}</td>
@@ -374,6 +389,27 @@ function renderExerciseOnlyTableById(tableId, data, dollarRate) {
             <td class="highlight-positive">${formatDual(row.taxRefund, dollarRate)}</td>
             <td class="highlight">${formatDual(row.netCostAfterRefund, dollarRate)}</td>
         </tr>`).join('');
+
+    table.querySelector('tbody').innerHTML = customInputRow + dataRows;
+}
+
+function calculateExerciseCustomRow(tableIndex, strikePrice, fmvPrice, shortTermTaxHigh, shortTermTaxActual, dollarRate) {
+    const qty = parseFloat(document.getElementById(`ex_custom_${tableIndex}`).value) || 0;
+    if (qty <= 0) return;
+
+    const inputs = { strikePrice, fmvPrice, shortTermTaxHigh, shortTermTaxActual };
+    const taxEvents = {
+        taxEvent1High: (fmvPrice - strikePrice) * shortTermTaxHigh,
+        taxEvent1Actual: (fmvPrice - strikePrice) * shortTermTaxActual
+    };
+    const row = calculateExerciseOnly(qty, inputs, taxEvents);
+
+    document.getElementById(`ex_custom_${tableIndex}_exercise`).innerHTML = formatDual(row.exerciseAmount, dollarRate);
+    document.getElementById(`ex_custom_${tableIndex}_taxHigh`).innerHTML = formatDual(row.taxAtHighRate, dollarRate);
+    document.getElementById(`ex_custom_${tableIndex}_upfront`).innerHTML = `<span class="highlight-warning">${formatDual(row.totalCompanyDeducts, dollarRate)}</span>`;
+    document.getElementById(`ex_custom_${tableIndex}_taxActual`).innerHTML = formatDual(row.taxAtActualRate, dollarRate);
+    document.getElementById(`ex_custom_${tableIndex}_refund`).innerHTML = `<span class="highlight-positive">${formatDual(row.taxRefund, dollarRate)}</span>`;
+    document.getElementById(`ex_custom_${tableIndex}_net`).innerHTML = `<span class="highlight">${formatDual(row.netCostAfterRefund, dollarRate)}</span>`;
 }
 
 function renderExerciseComparison(inputs) {
@@ -460,12 +496,12 @@ function calculateVestedTab() {
         `;
         container.appendChild(tableWrapper);
 
-        // Render table data
-        renderVestedOptionsTableById(`vestedTable_${index}`, vestedData, inputs.dollarRate);
+        // Render table data with custom input
+        renderVestedOptionsTableById(`vestedTable_${index}`, vestedData, inputs.dollarRate, singleInputs, index);
     });
 }
 
-function renderVestedOptionsTableById(tableId, data, dollarRate) {
+function renderVestedOptionsTableById(tableId, data, dollarRate, inputs, tableIndex) {
     const table = document.getElementById(tableId);
     table.querySelector('thead').innerHTML = `
         <tr>
@@ -480,7 +516,21 @@ function renderVestedOptionsTableById(tableId, data, dollarRate) {
             <th>Final Amount</th>
         </tr>`;
 
-    table.querySelector('tbody').innerHTML = data.map(row => `
+    // Custom input row at the top
+    const customInputRow = `
+        <tr class="custom-input-row">
+            <td><input type="number" id="vs_custom_${tableIndex}" placeholder="Enter qty" class="custom-qty-input" onchange="calculateVestedCustomRow(${tableIndex}, ${inputs.strikePrice}, ${inputs.sellPrice}, ${inputs.shortTermTaxHigh}, ${inputs.shortTermTaxActual}, ${dollarRate})"></td>
+            <td id="vs_custom_${tableIndex}_exercise">-</td>
+            <td id="vs_custom_${tableIndex}_sell">-</td>
+            <td id="vs_custom_${tableIndex}_taxHigh">-</td>
+            <td id="vs_custom_${tableIndex}_deducted">-</td>
+            <td id="vs_custom_${tableIndex}_transfer">-</td>
+            <td id="vs_custom_${tableIndex}_taxActual">-</td>
+            <td id="vs_custom_${tableIndex}_refund">-</td>
+            <td id="vs_custom_${tableIndex}_final">-</td>
+        </tr>`;
+
+    const dataRows = data.map(row => `
         <tr>
             <td>${formatNumber(row.numOptions)}</td>
             <td>${formatDual(row.exerciseCost, dollarRate)}</td>
@@ -492,6 +542,30 @@ function renderVestedOptionsTableById(tableId, data, dollarRate) {
             <td class="highlight-positive">${formatDual(row.taxRefund, dollarRate)}</td>
             <td class="highlight">${formatDual(row.finalAmount, dollarRate)}</td>
         </tr>`).join('');
+
+    table.querySelector('tbody').innerHTML = customInputRow + dataRows;
+}
+
+function calculateVestedCustomRow(tableIndex, strikePrice, sellPrice, shortTermTaxHigh, shortTermTaxActual, dollarRate) {
+    const qty = parseFloat(document.getElementById(`vs_custom_${tableIndex}`).value) || 0;
+    if (qty <= 0) return;
+
+    const inputs = { strikePrice, fmvPrice: sellPrice, sellPrice, shortTermTaxHigh, shortTermTaxActual };
+    const taxEvents = {
+        taxEvent1High: (sellPrice - strikePrice) * shortTermTaxHigh,
+        taxEvent1Actual: (sellPrice - strikePrice) * shortTermTaxActual,
+        taxEvent2Short: 0
+    };
+    const row = calculateVestedOptions(qty, inputs, taxEvents);
+
+    document.getElementById(`vs_custom_${tableIndex}_exercise`).innerHTML = formatDual(row.exerciseCost, dollarRate);
+    document.getElementById(`vs_custom_${tableIndex}_sell`).innerHTML = formatDual(row.sellProceeds, dollarRate);
+    document.getElementById(`vs_custom_${tableIndex}_taxHigh`).innerHTML = formatDual(row.taxEvent1, dollarRate);
+    document.getElementById(`vs_custom_${tableIndex}_deducted`).innerHTML = `<span class="highlight-warning">${formatDual(row.companyDeducts, dollarRate)}</span>`;
+    document.getElementById(`vs_custom_${tableIndex}_transfer`).innerHTML = formatDual(row.transferToAccount, dollarRate);
+    document.getElementById(`vs_custom_${tableIndex}_taxActual`).innerHTML = formatDual(row.taxAtActualRate, dollarRate);
+    document.getElementById(`vs_custom_${tableIndex}_refund`).innerHTML = `<span class="highlight-positive">${formatDual(row.taxRefund, dollarRate)}</span>`;
+    document.getElementById(`vs_custom_${tableIndex}_final`).innerHTML = `<span class="highlight">${formatDual(row.finalAmount, dollarRate)}</span>`;
 }
 
 function renderVestedComparison(inputs) {
@@ -576,8 +650,8 @@ function calculateLongTermTab() {
         `;
         container.appendChild(tableWrapper);
 
-        // Render table data
-        renderLongTermTableById(`longTermTable_${index}`, longTermData, inputs.dollarRate);
+        // Render table data with custom input
+        renderLongTermTableById(`longTermTable_${index}`, longTermData, inputs.dollarRate, strikePrice, inputs, index);
     });
 }
 
@@ -615,7 +689,7 @@ function calculateLongTermSale(numShares, strikePrice, inputs) {
     };
 }
 
-function renderLongTermTableById(tableId, data, dollarRate) {
+function renderLongTermTableById(tableId, data, dollarRate, strikePrice, inputs, tableIndex) {
     const table = document.getElementById(tableId);
     table.querySelector('thead').innerHTML = `
         <tr>
@@ -631,7 +705,22 @@ function renderLongTermTableById(tableId, data, dollarRate) {
             <th>Net Profit</th>
         </tr>`;
 
-    table.querySelector('tbody').innerHTML = data.map(row => `
+    // Custom input row at the top
+    const customInputRow = `
+        <tr class="custom-input-row">
+            <td><input type="number" id="lt_custom_${tableIndex}" placeholder="Enter qty" class="custom-qty-input" onchange="calculateLongTermCustomRow(${tableIndex}, ${strikePrice}, ${inputs.fmvAtExercise}, ${inputs.sellPrice}, ${inputs.shortTermTaxHigh}, ${inputs.shortTermTaxActual}, ${inputs.longTermTax}, ${dollarRate})"></td>
+            <td id="lt_custom_${tableIndex}_exercise">-</td>
+            <td id="lt_custom_${tableIndex}_perqTax">-</td>
+            <td id="lt_custom_${tableIndex}_upfront">-</td>
+            <td id="lt_custom_${tableIndex}_refund">-</td>
+            <td id="lt_custom_${tableIndex}_netExercise">-</td>
+            <td id="lt_custom_${tableIndex}_sell">-</td>
+            <td id="lt_custom_${tableIndex}_ltcg">-</td>
+            <td id="lt_custom_${tableIndex}_netSale">-</td>
+            <td id="lt_custom_${tableIndex}_profit">-</td>
+        </tr>`;
+
+    const dataRows = data.map(row => `
         <tr>
             <td>${formatNumber(row.numShares)}</td>
             <td>${formatDual(row.exerciseAmount, dollarRate)}</td>
@@ -644,6 +733,26 @@ function renderLongTermTableById(tableId, data, dollarRate) {
             <td>${formatDual(row.netFromSale, dollarRate)}</td>
             <td class="highlight">${formatDual(row.netProfit, dollarRate)}</td>
         </tr>`).join('');
+
+    table.querySelector('tbody').innerHTML = customInputRow + dataRows;
+}
+
+function calculateLongTermCustomRow(tableIndex, strikePrice, fmvAtExercise, sellPrice, shortTermTaxHigh, shortTermTaxActual, longTermTax, dollarRate) {
+    const qty = parseFloat(document.getElementById(`lt_custom_${tableIndex}`).value) || 0;
+    if (qty <= 0) return;
+
+    const inputs = { fmvAtExercise, sellPrice, shortTermTaxHigh, shortTermTaxActual, longTermTax };
+    const row = calculateLongTermSale(qty, strikePrice, inputs);
+
+    document.getElementById(`lt_custom_${tableIndex}_exercise`).innerHTML = formatDual(row.exerciseAmount, dollarRate);
+    document.getElementById(`lt_custom_${tableIndex}_perqTax`).innerHTML = formatDual(row.perquisiteTaxHigh, dollarRate);
+    document.getElementById(`lt_custom_${tableIndex}_upfront`).innerHTML = `<span class="highlight-warning">${formatDual(row.totalUpfront, dollarRate)}</span>`;
+    document.getElementById(`lt_custom_${tableIndex}_refund`).innerHTML = `<span class="highlight-positive">${formatDual(row.taxRefund, dollarRate)}</span>`;
+    document.getElementById(`lt_custom_${tableIndex}_netExercise`).innerHTML = formatDual(row.netExerciseCost, dollarRate);
+    document.getElementById(`lt_custom_${tableIndex}_sell`).innerHTML = formatDual(row.sellProceeds, dollarRate);
+    document.getElementById(`lt_custom_${tableIndex}_ltcg`).innerHTML = `<span class="highlight-warning">${formatDual(row.ltcgTax, dollarRate)}</span>`;
+    document.getElementById(`lt_custom_${tableIndex}_netSale`).innerHTML = formatDual(row.netFromSale, dollarRate);
+    document.getElementById(`lt_custom_${tableIndex}_profit`).innerHTML = `<span class="highlight">${formatDual(row.netProfit, dollarRate)}</span>`;
 }
 
 function renderLongTermComparison(inputs) {
