@@ -26,15 +26,19 @@ document.addEventListener('DOMContentLoaded', function() {
     calculateExerciseTab();
 });
 
-// Get inputs for Exercise Only tab (multiple strike prices)
-function getExerciseInputs() {
-    const strikePricesStr = document.getElementById('ex_strikePrices').value || '';
-    const strikePrices = strikePricesStr.split(',')
+// Helper to parse comma-separated numbers
+function parseCommaSeparated(str, defaultValue) {
+    const values = (str || '').split(',')
         .map(s => parseFloat(s.trim()))
         .filter(n => !isNaN(n) && n >= 0);
+    return values.length > 0 ? values : defaultValue;
+}
 
+// Get inputs for Exercise Only tab (multiple strike prices)
+function getExerciseInputs() {
     return {
-        strikePrices: strikePrices.length > 0 ? strikePrices : [0.133],
+        shareQuantities: parseCommaSeparated(document.getElementById('ex_shareQuantities').value, [1000, 2000, 3000]),
+        strikePrices: parseCommaSeparated(document.getElementById('ex_strikePrices').value, [1]),
         fmvPrice: parseFloat(document.getElementById('ex_fmvPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('ex_dollarRate').value) || 0,
         shortTermTaxHigh: (parseFloat(document.getElementById('ex_shortTermTaxHigh').value) || 0) / 100,
@@ -44,13 +48,9 @@ function getExerciseInputs() {
 
 // Get inputs for Vested Options (Same-Day Sale / Buy Back) tab
 function getVestedInputs() {
-    const strikePricesStr = document.getElementById('vs_strikePrices').value || '';
-    const strikePrices = strikePricesStr.split(',')
-        .map(s => parseFloat(s.trim()))
-        .filter(n => !isNaN(n) && n >= 0);
-
     return {
-        strikePrices: strikePrices.length > 0 ? strikePrices : [0.133],
+        shareQuantities: parseCommaSeparated(document.getElementById('vs_shareQuantities').value, [1000, 2000, 3000]),
+        strikePrices: parseCommaSeparated(document.getElementById('vs_strikePrices').value, [1]),
         buyBackPrice: parseFloat(document.getElementById('vs_buyBackPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('vs_dollarRate').value) || 0,
         shortTermTaxHigh: (parseFloat(document.getElementById('vs_shortTermTaxHigh').value) || 0) / 100,
@@ -60,13 +60,9 @@ function getVestedInputs() {
 
 // Get inputs for Long Term Sale tab
 function getLongTermInputs() {
-    const strikePricesStr = document.getElementById('lt_strikePrices').value || '';
-    const strikePrices = strikePricesStr.split(',')
-        .map(s => parseFloat(s.trim()))
-        .filter(n => !isNaN(n) && n >= 0);
-
     return {
-        strikePrices: strikePrices.length > 0 ? strikePrices : [1],
+        shareQuantities: parseCommaSeparated(document.getElementById('lt_shareQuantities').value, [1000, 2000, 3000]),
+        strikePrices: parseCommaSeparated(document.getElementById('lt_strikePrices').value, [1]),
         fmvAtExercise: parseFloat(document.getElementById('lt_fmvAtExercise').value) || 0,
         sellPrice: parseFloat(document.getElementById('lt_sellPrice').value) || 0,
         dollarRate: parseFloat(document.getElementById('lt_dollarRate').value) || 0,
@@ -79,6 +75,7 @@ function getLongTermInputs() {
 // Get inputs for Comparison tab
 function getComparisonInputs() {
     return {
+        shareQuantities: parseCommaSeparated(document.getElementById('cp_shareQuantities').value, [1000, 2000, 3000]),
         strikePrice: parseFloat(document.getElementById('cp_strikePrice').value) || 0,
         fmvPrice: parseFloat(document.getElementById('cp_fmvPrice').value) || 0,
         fmvAtExercise: parseFloat(document.getElementById('cp_fmvAtExercise').value) || 0,
@@ -335,7 +332,7 @@ function calculateExerciseTab() {
             taxEvent1Actual: (inputs.fmvPrice - strikePrice) * inputs.shortTermTaxActual
         };
 
-        const exerciseData = shareQuantities.map(qty => calculateExerciseOnly(qty, singleInputs, taxEvents));
+        const exerciseData = inputs.shareQuantities.map(qty => calculateExerciseOnly(qty, singleInputs, taxEvents));
 
         // Create table wrapper
         const tableWrapper = document.createElement('div');
@@ -406,7 +403,7 @@ function renderExerciseComparison(inputs) {
 
     // Body rows
     let bodyRows = '';
-    shareQuantities.forEach(qty => {
+    inputs.shareQuantities.forEach(qty => {
         let row = `<tr><td>${formatNumber(qty)}</td>`;
         let costs = [];
 
@@ -449,7 +446,7 @@ function calculateVestedTab() {
             taxEvent2Short: 0 // Same-day sale at Buy Back price means no additional capital gain
         };
 
-        const vestedData = shareQuantities.map(qty => calculateVestedOptions(qty, singleInputs, taxEvents));
+        const vestedData = inputs.shareQuantities.map(qty => calculateVestedOptions(qty, singleInputs, taxEvents));
 
         // Create table wrapper
         const tableWrapper = document.createElement('div');
@@ -525,7 +522,7 @@ function renderVestedComparison(inputs) {
 
     // Body rows
     let bodyRows = '';
-    shareQuantities.forEach(qty => {
+    inputs.shareQuantities.forEach(qty => {
         let row = `<tr><td>${formatNumber(qty)}</td>`;
         let amounts = [];
 
@@ -563,7 +560,7 @@ function calculateLongTermTab() {
 
     // Generate a table for each strike price
     inputs.strikePrices.forEach((strikePrice, index) => {
-        const longTermData = shareQuantities.map(qty => calculateLongTermSale(qty, strikePrice, inputs));
+        const longTermData = inputs.shareQuantities.map(qty => calculateLongTermSale(qty, strikePrice, inputs));
 
         // Create table wrapper
         const tableWrapper = document.createElement('div');
@@ -677,7 +674,7 @@ function renderLongTermComparison(inputs) {
 
     // Body rows
     let bodyRows = '';
-    shareQuantities.forEach(qty => {
+    inputs.shareQuantities.forEach(qty => {
         let row = `<tr><td>${formatNumber(qty)}</td>`;
         let amounts = [];
 
@@ -702,9 +699,9 @@ function calculateComparisonTab() {
     const taxEvents = calculateTaxEvents(inputs);
     const { dollarRate } = inputs;
 
-    const vestedData = shareQuantities.map(qty => calculateVestedOptions(qty, inputs, taxEvents));
-    const exercisedData = shareQuantities.map(qty => calculateExercisedShares(qty, inputs, taxEvents));
-    const exerciseData = shareQuantities.map(qty => calculateExerciseOnly(qty, inputs, taxEvents));
+    const vestedData = inputs.shareQuantities.map(qty => calculateVestedOptions(qty, inputs, taxEvents));
+    const exercisedData = inputs.shareQuantities.map(qty => calculateExercisedShares(qty, inputs, taxEvents));
+    const exerciseData = inputs.shareQuantities.map(qty => calculateExerciseOnly(qty, inputs, taxEvents));
 
     renderComparisonTable(vestedData, exercisedData, exerciseData, dollarRate);
 }
